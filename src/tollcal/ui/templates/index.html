@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOLLCAL - TikTok to UCircle Wavee Sync Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B0F17;
+      color: #E2E8F0;
+    }
+    .glass-panel {
+      background: rgba(18, 24, 38, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-input {
+      background: rgba(11, 15, 23, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .glass-input:focus {
+      border-color: #38BDF8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-btn {
+      background: linear-gradient(135deg, #0284C7 0%, #4F46E5 100%);
+    }
+    .gradient-btn:hover {
+      background: linear-gradient(135deg, #0369A1 0%, #4338CA 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 sticky top-0 z-50 glass-panel">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight gradient-text">TOLLCAL</span>
+          <span class="text-xs ml-2 px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/50">v1.0 Pro</span>
+        </div>
+      </div>
+
+      <!-- Auth Status Badge -->
+      <div id="authStatusBadge" class="flex items-center space-x-2 text-sm px-3.5 py-1.5 rounded-full bg-slate-800/60 border border-slate-700">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="statusDot"></span>
+        <span id="statusText" class="text-slate-300 font-medium">Đang kiểm tra kết nối...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 w-full">
+    <div class="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto">
+      <button onclick="switchTab('sync')" id="tab-sync" class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm flex items-center space-x-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+        <i data-lucide="play-circle" class="w-4 h-4"></i>
+        <span>Đồng Bộ Video</span>
+      </button>
+      <button onclick="switchTab('scanner')" id="tab-scanner" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+        <i data-lucide="scan" class="w-4 h-4 text-cyan-400"></i>
+        <span>Quét Kênh TikTok</span>
+      </button>
+      <button onclick="switchTab('auth')" id="tab-auth" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+        <i data-lucide="shield-check" class="w-4 h-4"></i>
+        <span>Tài Khoản UCircle</span>
+      </button>
+      <button onclick="switchTab('channels')" id="tab-channels" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+        <i data-lucide="rss" class="w-4 h-4"></i>
+        <span>Theo Dõi Kênh</span>
+      </button>
+      <button onclick="switchTab('history')" id="tab-history" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>Lịch Sử Đồng Bộ</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+    <!-- ==================== TAB 1: SYNC VIDEO ==================== -->
+    <div id="content-sync" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left 2 Cols: Form -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="glass-panel p-6 rounded-2xl shadow-xl">
+
+            <!-- ==================== TARGET CIRCLE SELECTOR ==================== -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg mb-5 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <label class="text-sm font-bold text-white flex items-center space-x-2">
+                  <i data-lucide="target" class="w-4 h-4 text-cyan-400"></i>
+                  <span>🎯 Chọn Circle Mục Tiêu Để Đăng Video</span>
+                </label>
+                <span class="text-[11px] text-cyan-400/90 font-medium" id="circleActiveBadge">Đang chọn: Circle Mặc Định</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <!-- Dropdown -->
+                <div class="sm:col-span-2">
+                  <select id="globalCircleSelect" onchange="onGlobalCircleChange()" 
+                    class="w-full glass-input px-3.5 py-2.5 rounded-xl text-white font-medium focus:outline-none text-xs bg-slate-800/95 border border-cyan-500/40">
+                    <option value="">👤 Trang Cá Nhân (Personal - Không vào Circle)</option>
+                    <option value="d159b031-169d-4b4d-a2af-e8087b84a1fb" selected>🌐 Circle Mặc Định (.env: d159b031...)</option>
+                    <!-- Custom and fetched circles go here -->
+                    <option value="__custom__">✏️ Nhập Link Circle hoặc UUID Mới...</option>
+                  </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-2">
+                  <button type="button" onclick="loadUserCircles(true)" class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 font-semibold rounded-xl border border-slate-700 flex items-center justify-center space-x-1" title="Lấy danh sách Circle từ tài khoản UCircle">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    <span>Tải Circle</span>
+                  </button>
+                  <button type="button" onclick="saveCurrentCircleAsPreset()" class="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-xs text-cyan-300 font-semibold rounded-xl border border-cyan-500/30 flex items-center justify-center space-x-1" title="Lưu Circle này vào danh sách">
+                    <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+                    <span>Lưu</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Custom Circle Input Box (Collapsible) -->
+              <div id="customCircleBox" class="mt-2 pt-2.5 border-t border-slate-800/80 space-y-2 hidden">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span>Dán URL Circle (vd: https://ucircle.net/ci/...) hoặc UUID:</span>
+                  <span class="text-cyan-400 font-mono text-[11px]" id="customCircleExtracted"></span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input type="text" id="customCircleInput" placeholder="https://ucircle.net/ci/d159b031-169d-4b4d-a2af-e8087b84a1fb" 
+                    oninput="handleCustomCircleInput()"
+                    class="flex-1 glass-input px-3.5 py-2 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none font-mono">
+                  <input type="text" id="customCircleNameInput" placeholder="Tên Circle (vd: Circle Tin Tức)" 
+                    class="w-full sm:w-44 glass-input px-3 py-2 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+              <div class="flex space-x-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                <button onclick="setSyncMode('single')" id="mode-single" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition-all flex items-center space-x-1.5">
+                  <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                  <span>1 Link Đơn Lẻ</span>
+                </button>
+                <button onclick="setSyncMode('batch')" id="mode-batch" class="px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                  <span>Hàng Loạt (Excel / CSV)</span>
+                </button>
+              </div>
+
+              <!-- Template Download (Only in Batch Mode) -->
+              <a href="/api/template/batch-excel" download id="btnDownloadTemplate" class="hidden text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Tải File Excel Mẫu (.xlsx)</span>
+              </a>
+            </div>
+
+            <!-- Single URL Mode -->
+            <div id="panelSingleMode" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1.5">Link video TikTok (URL)</label>
+                <div class="relative">
+                  <input type="text" id="syncUrlInput" placeholder="https://vt.tiktok.com/ZSjxxxxxx/ hoặc https://www.tiktok.com/@user/video/..." 
+                    class="w-full glass-input px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none pr-10">
+                  <button onclick="pasteClipboard()" class="absolute right-3 top-3 text-slate-400 hover:text-cyan-400" title="Dán từ Clipboard">
+                    <i data-lucide="clipboard" class="w-5 h-5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1.5">Chế độ hiển thị trên Wavee</label>
+                <select id="syncVisibility" class="w-full glass-input px-3.5 py-2.5 rounded-xl text-white focus:outline-none text-sm">
+                  <option value="public">Công khai (Public)</option>
+                  <option value="connections">Chỉ kết nối (Connections)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1.5">Caption tùy chỉnh (Tùy chọn - mặc định giữ nguyên gốc TikTok)</label>
+                <textarea id="syncCaption" rows="2" placeholder="Nhập tiêu đề hoặc hashtag riêng nếu muốn thay đổi..." 
+                  class="w-full glass-input px-3.5 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none resize-none text-sm"></textarea>
+              </div>
+
+              <button onclick="startSyncSingle()" id="btnStartSyncSingle" class="w-full gradient-btn py-3.5 px-6 rounded-xl font-bold text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all active:scale-[0.99]">
+                <i data-lucide="arrow-up-circle" class="w-5 h-5"></i>
+                <span>Bắt Đầu Đồng Bộ Sang UCircle Wavee</span>
+              </button>
+            </div>
+
+            <!-- Batch File Mode -->
+            <div id="panelBatchMode" class="space-y-4 hidden">
+              <div class="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-2xl p-6 text-center cursor-pointer bg-slate-900/40 transition-colors" onclick="document.getElementById('batchFileInput').click()">
+                <input type="file" id="batchFileInput" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleBatchFileSelect(event)">
+                <i data-lucide="upload-cloud" class="w-10 h-10 text-cyan-400 mx-auto mb-2"></i>
+                <div class="text-sm font-bold text-white mb-1" id="batchFileLabel">Nhấp để chọn hoặc kéo thả file Excel (.xlsx) / CSV vào đây</div>
+                <div class="text-xs text-slate-500">Hệ thống sẽ tự động quét cột chứa link TikTok và tiêu đề tương ứng</div>
+              </div>
+
+              <!-- Preview List -->
+              <div id="batchPreviewBox" class="hidden space-y-3">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span id="batchCountBadge" class="font-bold text-cyan-400">0 video được tìm thấy</span>
+                  <span class="text-slate-400">Cấu hình Circle ID & Tốc độ</span>
+                </div>
+
+                <!-- Multi-Worker Concurrency Controller -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-200 flex items-center space-x-1.5">
+                      <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>Số luồng chạy song song (Multi-Worker):</span>
+                    </label>
+                    <span id="workerCountLabel" class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">3 Luồng</span>
+                  </div>
+                  <input type="range" id="workerSlider" min="1" max="8" value="3" 
+                    oninput="document.getElementById('workerCountLabel').innerText = this.value + ' Luồng'"
+                    class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400">
+                  <div class="flex justify-between text-[10px] text-slate-500">
+                    <span>1 (Tuần tự)</span>
+                    <span>3 (Khuyên dùng)</span>
+                    <span>5 (Nhanh)</span>
+                    <span>8 (Siêu tốc)</span>
+                  </div>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto bg-slate-900/60 rounded-xl border border-slate-800 divide-y divide-slate-800 text-xs" id="batchItemsList">
+                </div>
+
+                <button onclick="startBatchSync()" id="btnStartBatchSync" class="w-full gradient-btn py-3.5 px-6 rounded-xl font-bold text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all active:scale-[0.99]">
+                  <i data-lucide="play" class="w-5 h-5"></i>
+                  <span>Bắt Đầu Đồng Bộ Hàng Loạt</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right 1 Col: Status & Live Log -->
+        <div class="space-y-6">
+          <div class="glass-panel p-6 rounded-2xl shadow-xl flex flex-col h-full">
+            <h3 class="text-base font-bold text-white flex items-center space-x-2 mb-3">
+              <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+              <span>Tiến trình xử lý thời gian thực</span>
+            </h3>
+
+            <!-- Progress Bar -->
+            <div class="space-y-2 mb-4">
+              <div class="flex justify-between text-xs text-slate-400">
+                <span id="progressStepName">Sẵn sàng</span>
+                <span id="progressPercent">0%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div id="progressBar" class="bg-gradient-to-r from-cyan-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Terminal Log Window -->
+            <div class="flex-1 bg-black/60 rounded-xl p-3.5 border border-slate-800 font-mono text-xs text-slate-300 overflow-y-auto max-h-72 space-y-1.5" id="logContainer">
+              <div class="text-slate-500">// Log hoạt động sẽ hiển thị tại đây...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB SCANNER: QUÉT KÊNH TIKTOK ==================== -->
+    <div id="content-scanner" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <i data-lucide="scan" class="w-5 h-5 text-cyan-400"></i>
+              <span>Quét Toàn Bộ Video Kênh TikTok (Channel Link Extractor)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Tự động thu thập 100% link video, tiêu đề, hashtag và thông số từ bất kỳ kênh TikTok nào.</p>
+          </div>
+          <span class="text-xs font-semibold px-3 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full w-fit">
+            🚀 Tốc độ quét: ~2-4 giây / 100 video
+          </span>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="flex space-x-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 w-fit">
+          <button type="button" onclick="setScanMode('search')" id="scanModeSearch" 
+            class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center space-x-1.5">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>🔍 Tìm Kiếm Từ Khóa / Chủ Đề (Không Bị Captcha)</span>
+          </button>
+          <button type="button" onclick="setScanMode('channel')" id="scanModeChannel" 
+            class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-1.5">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span>👤 Quét Kênh Creator (@username)</span>
+          </button>
+        </div>
+
+        <!-- Scanner Form -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <!-- Col 1-2: Input Query -->
+          <div class="sm:col-span-2 lg:col-span-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="scanInputLabel">Từ khóa tìm kiếm (Ví dụ: tin tức, xe cộ, hài hước, #review...)</label>
+            <div class="relative">
+              <input type="text" id="scanChannelInput" placeholder="Nhập từ khóa tìm kiếm (vd: review đồ gia dụng, tin tức công nghệ...)" 
+                class="w-full glass-input px-4 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none pr-10 text-xs">
+              <button onclick="pasteScanClipboard()" class="absolute right-3 top-2.5 text-slate-400 hover:text-cyan-400" title="Dán từ Clipboard">
+                <i data-lucide="clipboard" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Col 3: Duration Filter -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center space-x-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Lọc thời lượng video</span>
+            </label>
+            <select id="scanDurationSelect" class="w-full glass-input px-3 py-2.5 rounded-xl text-white focus:outline-none text-xs bg-slate-800/90 border border-amber-500/30 font-medium">
+              <option value="120" selected>⚡ Dưới 2 phút (&le; 120s)</option>
+              <option value="60">⚡ Dưới 1 phút (&le; 60s - Short)</option>
+              <option value="180">⚡ Dưới 3 phút (&le; 180s)</option>
+              <option value="0">🌐 Tất cả thời lượng</option>
+            </select>
+          </div>
+
+          <!-- Col 4: Limit -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Số lượng cần lấy</label>
+            <select id="scanLimitSelect" class="w-full glass-input px-3.5 py-2.5 rounded-xl text-white focus:outline-none text-xs">
+              <option value="30">30 video</option>
+              <option value="60">60 video</option>
+              <option value="90" selected>90 video</option>
+              <option value="150">150 video</option>
+              <option value="300">300 video</option>
+            </select>
+          </div>
+
+          <!-- Col 5: Scan Button -->
+          <div class="flex items-end">
+            <button onclick="startChannelScan()" id="btnStartScan" class="w-full gradient-btn py-2.5 px-4 rounded-xl font-bold text-white shadow-lg shadow-cyan-600/20 flex items-center justify-center space-x-1.5 transition-all active:scale-[0.99] text-xs">
+              <i data-lucide="search" class="w-4 h-4" id="scanIconSearch"></i>
+              <span id="scanBtnText">Bắt Đầu Tìm Video</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scanner Progress & Results -->
+        <div id="scanResultContainer" class="hidden space-y-4 pt-2">
+          <!-- Summary Header & Action Buttons -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800 gap-3">
+            <div>
+              <div class="text-sm font-bold text-white flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Kênh: <span id="scanResultUser" class="text-cyan-400 font-mono">@...</span></span>
+              </div>
+              <div class="text-xs text-slate-400 mt-0.5" id="scanResultSummary">Đã tìm thấy 0 video</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="transferScannedToBatch()" class="bg-indigo-600 hover:bg-indigo-500 px-3.5 py-2 rounded-lg text-xs font-bold text-white flex items-center space-x-1.5 transition-colors shadow-md shadow-indigo-600/30">
+                <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+                <span>Chuyển Sang Tải Hàng Loạt</span>
+              </button>
+              <button onclick="exportScannedToExcel()" class="bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 rounded-lg text-xs font-bold text-white flex items-center space-x-1.5 transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Xuất File Excel (.xlsx)</span>
+              </button>
+              <button onclick="copyAllScannedLinks()" class="bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 flex items-center space-x-1 transition-colors border border-slate-700">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Copy Link</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Grid / List -->
+          <div class="max-h-96 overflow-y-auto divide-y divide-slate-800 bg-slate-900/60 rounded-xl border border-slate-800 text-xs" id="scannedVideosList">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: AUTH & QUOTA ==================== -->
+    <div id="content-auth" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Login Form Card -->
+        <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-5">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i>
+            <span>Đăng nhập UCircle (Email OTP)</span>
+          </h2>
+          <p class="text-sm text-slate-400">Nhập email UCircle của bạn để nhận mã xác thực 6 số. Hệ thống sẽ tự động duy trì đăng nhập vĩnh viễn.</p>
+
+          <!-- Step 1: Send OTP -->
+          <div class="space-y-3" id="stepSendOtp">
+            <label class="block text-sm font-medium text-slate-300">Email UCircle</label>
+            <div class="flex space-x-2">
+              <input type="email" id="authEmailInput" placeholder="vidu@gmail.com" 
+                class="flex-1 glass-input px-3.5 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none">
+              <button onclick="requestOtp()" id="btnSendOtp" class="gradient-btn px-4 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center space-x-1.5 shrink-0">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Gửi OTP</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Verify OTP -->
+          <div class="space-y-3 pt-2 border-t border-slate-800" id="stepVerifyOtp">
+            <label class="block text-sm font-medium text-slate-300">Mã OTP 6 chữ số (trong email)</label>
+            <div class="flex space-x-2">
+              <input type="text" id="authOtpInput" placeholder="123456" maxlength="6"
+                class="flex-1 glass-input px-3.5 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none tracking-widest font-mono text-center text-lg">
+              <button onclick="verifyOtp()" id="btnVerifyOtp" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center space-x-1.5 shrink-0 transition-colors">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Xác Nhận</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quota & Profile Card -->
+        <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-4">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-cyan-400"></i>
+            <span>Thông tin Hạn Mức Wavee</span>
+          </h2>
+          
+          <div class="space-y-3" id="quotaDetails">
+            <div class="flex justify-between items-center py-2 border-b border-slate-800/80">
+              <span class="text-sm text-slate-400">User ID</span>
+              <span class="text-sm font-mono text-cyan-300" id="quotaUserId">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-800/80">
+              <span class="text-sm text-slate-400">Gói tài khoản (Tier)</span>
+              <span class="text-sm font-semibold text-white px-2.5 py-0.5 rounded-full bg-slate-800" id="quotaTier">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-800/80">
+              <span class="text-sm text-slate-400">Thời lượng tối đa/video</span>
+              <span class="text-sm font-semibold text-emerald-400" id="quotaMaxSeconds">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-slate-800/80">
+              <span class="text-sm text-slate-400">Dung lượng tối đa/video</span>
+              <span class="text-sm font-semibold text-emerald-400" id="quotaMaxMb">—</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-sm text-slate-400">Tổng số phút lưu trữ còn lại</span>
+              <span class="text-sm font-bold text-cyan-400" id="quotaRemaining">—</span>
+            </div>
+          </div>
+
+          <button onclick="refreshAuthStatus()" class="w-full mt-2 py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors flex items-center justify-center space-x-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Cập nhật trạng thái hạn mức</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: CHANNELS ==================== -->
+    <div id="content-channels" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <i data-lucide="rss" class="w-5 h-5 text-indigo-400"></i>
+              <span>Quản lý Kênh Creator Theo Dõi Tự Động</span>
+            </h2>
+            <p class="text-sm text-slate-400">Tool sẽ định kỳ quét các kênh này và tự động tải video mới nhất về upload lên Wavee.</p>
+          </div>
+          <button onclick="openAddChannelModal()" class="gradient-btn px-4 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center space-x-1.5 shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Thêm Kênh Mới</span>
+          </button>
+        </div>
+
+        <!-- Channels Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-800/60 text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3 rounded-l-lg">Creator ID</th>
+                <th class="px-4 py-3">URL Kênh</th>
+                <th class="px-4 py-3">Quyền</th>
+                <th class="px-4 py-3">Lần quét cuối</th>
+                <th class="px-4 py-3 rounded-r-lg text-right">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="channelTableBody" class="divide-y divide-slate-800">
+              <tr>
+                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có kênh nào. Bấm 'Thêm Kênh Mới' để bắt đầu.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: HISTORY ==================== -->
+    <div id="content-history" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i data-lucide="history" class="w-5 h-5 text-cyan-400"></i>
+            <span>Lịch Sử Đồng Bộ Gần Đây</span>
+          </h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <a href="/api/export/excel" download class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center space-x-1.5 shadow-lg shadow-emerald-700/20 transition-colors" title="File Excel có màu sắc và tự động co giãn cột vừa khít nội dung">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>Xuất File Excel (.xlsx)</span>
+            </a>
+            <a href="/api/export/csv" download class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 flex items-center space-x-1.5 border border-slate-700 transition-colors">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Xuất CSV (.csv)</span>
+            </a>
+            <button onclick="loadHistory()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs transition-colors">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-800/60 text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-3.5 py-3 rounded-l-lg">STT</th>
+                <th class="px-3.5 py-3">TikTok Link</th>
+                <th class="px-3.5 py-3">UCircle Wavee (Link Xem)</th>
+                <th class="px-3.5 py-3">Thời lượng</th>
+                <th class="px-3.5 py-3">Trạng thái</th>
+                <th class="px-3.5 py-3 rounded-r-lg">Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-800">
+              <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-slate-500">Đang tải lịch sử...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Khởi tạo icons
+    lucide.createIcons();
+
+    // Chuyển Tab
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30', 'font-semibold');
+        btn.classList.add('text-slate-400', 'font-medium');
+      });
+      const activeBtn = document.getElementById('tab-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30', 'font-semibold');
+        activeBtn.classList.remove('text-slate-400', 'font-medium');
+      }
+
+      ['sync', 'scanner', 'auth', 'channels', 'history'].forEach(id => {
+        const el = document.getElementById('content-' + id);
+        if (el) el.classList.add('hidden');
+      });
+      const activeContent = document.getElementById('content-' + tabId);
+      if (activeContent) activeContent.classList.remove('hidden');
+
+      if (tabId === 'history') loadHistory();
+      if (tabId === 'channels') loadChannels();
+    }
+
+    // ==================== TIKTOK CHANNEL / SEARCH SCANNER JS ====================
+    let currentScanMode = 'search';
+    let scannedVideosList = [];
+
+    function setScanMode(mode) {
+      currentScanMode = mode;
+      const btnSearch = document.getElementById('scanModeSearch');
+      const btnChannel = document.getElementById('scanModeChannel');
+      const label = document.getElementById('scanInputLabel');
+      const input = document.getElementById('scanChannelInput');
+      const btnText = document.getElementById('scanBtnText');
+
+      if (mode === 'search') {
+        btnSearch.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center space-x-1.5';
+        btnChannel.className = 'px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-1.5';
+        label.innerText = 'Từ khóa tìm kiếm (Ví dụ: review phim, tin tức, công nghệ, ẩm thực...)';
+        input.placeholder = 'Nhập từ khóa tìm kiếm (vd: review đồ gia dụng, tin tức mới...)';
+        btnText.innerText = 'Bắt Đầu Tìm Video';
+      } else {
+        btnChannel.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center space-x-1.5';
+        btnSearch.className = 'px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-1.5';
+        label.innerText = 'Link Kênh TikTok hoặc @Username (Ví dụ: @username hoặc https://www.tiktok.com/@username)';
+        input.placeholder = 'Ví dụ: @username hoặc https://www.tiktok.com/@username';
+        btnText.innerText = 'Bắt Đầu Quét Kênh';
+      }
+    }
+
+    async function pasteScanClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('scanChannelInput').value = text;
+      } catch (err) {
+        alert('Không thể đọc clipboard, vui lòng dán thủ công.');
+      }
+    }
+
+    async function startChannelScan() {
+      const queryInput = document.getElementById('scanChannelInput').value.trim();
+      const limit = parseInt(document.getElementById('scanLimitSelect').value, 10) || 90;
+      const maxDuration = parseFloat(document.getElementById('scanDurationSelect')?.value || '120');
+
+      if (!queryInput) {
+        return alert(currentScanMode === 'search' 
+          ? 'Vui lòng nhập từ khóa tìm kiếm TikTok (vd: tin tức, review)!' 
+          : 'Vui lòng nhập link kênh hoặc @username TikTok!');
+      }
+
+      const btn = document.getElementById('btnStartScan');
+      const btnText = document.getElementById('scanBtnText');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btnText.innerText = currentScanMode === 'search' ? 'Đang tìm kiếm video...' : 'Đang quét toàn bộ video...';
+
+      const durLabel = maxDuration > 0 ? `thời lượng <= ${maxDuration}s` : 'tất cả thời lượng';
+      addLog(`🔍 Bắt đầu ${currentScanMode === 'search' ? 'tìm kiếm từ khóa' : 'quét kênh'}: "${queryInput}" (lấy tối đa ${limit} video, ${durLabel})...`, 'text-cyan-400 font-semibold');
+
+      try {
+        const res = await fetch('/api/tiktok/scan-channel', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            channel_url: queryInput,
+            mode: currentScanMode,
+            max_videos: limit,
+            max_duration: maxDuration,
+            method: 'auto'
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok && data.videos && data.videos.length > 0) {
+          scannedVideosList = data.videos;
+          document.getElementById('scanResultContainer').classList.remove('hidden');
+          
+          if (data.mode === 'search') {
+            document.getElementById('scanResultUser').innerText = `Từ khóa: "${data.query}"`;
+          } else {
+            document.getElementById('scanResultUser').innerText = `@${data.username || 'creator'}`;
+          }
+          document.getElementById('scanResultSummary').innerText = `Đã tìm thấy ${data.count} video TikTok chuẩn HD không watermark (${durLabel}).`;
+
+          // Render danh sách video quét được
+          const container = document.getElementById('scannedVideosList');
+          container.innerHTML = data.videos.map((v, idx) => {
+            const dur = v.duration ? Number(v.duration) : 0;
+            const durFormatted = dur > 0 ? (dur < 60 ? `${Math.round(dur)}s` : `${Math.floor(dur/60)}m${Math.round(dur%60)}s`) : '—';
+            return `
+            <div class="p-3 flex items-center justify-between space-x-3 hover:bg-slate-800/40 transition-colors">
+              <div class="flex items-center space-x-3 truncate flex-1">
+                <span class="font-bold text-slate-500 text-xs w-6 shrink-0">#${idx+1}</span>
+                ${v.cover ? `<img src="${v.cover}" class="w-10 h-10 object-cover rounded-lg shrink-0 border border-slate-700">` : '<div class="w-10 h-10 bg-slate-800 rounded-lg shrink-0 flex items-center justify-center text-slate-600 font-bold">🎬</div>'}
+                <div class="truncate">
+                  <div class="font-semibold text-slate-200 truncate">${v.title || 'Video TikTok'}</div>
+                  <a href="${v.url}" target="_blank" class="text-cyan-400 font-mono text-[11px] hover:underline truncate block">${v.url}</a>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2 shrink-0">
+                ${dur > 0 ? `<span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20 font-bold">⏱️ ${durFormatted}</span>` : ''}
+                ${v.views ? `<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-semibold">${Number(v.views).toLocaleString()} views</span>` : ''}
+              </div>
+            </div>
+            `;
+          }).join('');
+
+          lucide.createIcons();
+          const targetName = data.mode === 'search' ? `từ khóa "${data.query}"` : `kênh @${data.username}`;
+          addLog(`✔ Đã tìm thấy ${data.count} video TikTok cho ${targetName} (${durLabel})!`, 'text-emerald-400 font-bold');
+        } else {
+          const errMsg = data.error || (currentScanMode === 'search' 
+            ? `Không tìm thấy video nào với từ khóa "${queryInput}". Hãy thử từ khóa khác!` 
+            : `Không tìm thấy video nào từ kênh "${queryInput}". Vui lòng kiểm tra lại link hoặc username!`);
+          alert('✖ ' + errMsg);
+          addLog(`✖ Không tìm thấy video: ${errMsg}`, 'text-rose-400');
+        }
+      } catch (e) {
+        alert('✖ Lỗi kết nối khi tìm/quét video: ' + e);
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnText.innerText = currentScanMode === 'search' ? 'Bắt Đầu Tìm Video' : 'Bắt Đầu Quét Kênh';
+      }
+    }
+
+    // Chuyển toàn bộ video đã quét sang Tab Tải Hàng Loạt
+    function transferScannedToBatch() {
+      if (!scannedVideosList || scannedVideosList.length === 0) {
+        return alert('Chưa có video nào được quét!');
+      }
+
+      const circleInfo = getSelectedCircleInfo();
+
+      // Nạp vào batchVideosList với Circle đã chọn
+      batchVideosList = scannedVideosList.map(v => ({
+        url: v.url,
+        caption: v.title || null,
+        visibility: 'public',
+        circle_id: circleInfo.id,
+      }));
+
+      // Chuyển sang Tab Sync -> Mode Batch
+      switchTab('sync');
+      setSyncMode('batch');
+
+      document.getElementById('batchFileLabel').innerText = `Đã nạp ${batchVideosList.length} video từ bộ quét TikTok`;
+      document.getElementById('batchCountBadge').innerText = `Tìm thấy ${batchVideosList.length} video TikTok`;
+      document.getElementById('batchPreviewBox').classList.remove('hidden');
+
+      const container = document.getElementById('batchItemsList');
+      container.innerHTML = batchVideosList.map((it, idx) => `
+        <div class="p-2.5 flex items-center justify-between space-x-2">
+          <div class="truncate flex-1">
+            <span class="font-bold text-slate-400 mr-1.5">#${idx+1}</span>
+            <span class="text-cyan-300 font-mono">${it.url}</span>
+            ${it.caption ? `<div class="text-slate-400 truncate mt-0.5 text-[11px]">${it.caption}</div>` : ''}
+            <div class="text-cyan-400 text-[10px] mt-0.5 font-medium">🎯 Circle: ${circleInfo.name} (${circleInfo.id ? circleInfo.id.slice(0,8) + '...' : 'Cá nhân'})</div>
+          </div>
+          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 shrink-0">${it.visibility}</span>
+        </div>
+      `).join('');
+
+      addLog(`✨ Đã nạp ${batchVideosList.length} video vào hàng chờ -> 🎯 Mục tiêu: Circle [${circleInfo.name}]!`, 'text-cyan-400 font-bold');
+      alert(`✔ Đã chuyển ${batchVideosList.length} video sang danh sách Tải Hàng Loạt!\n🎯 Mục tiêu đăng: "${circleInfo.name}"\nBạn có thể điều chỉnh số luồng và bấm Bắt Đầu Đồng Bộ.`);
+    }
+
+    // Xuất file Excel từ danh sách video quét được
+    async function exportScannedToExcel() {
+      if (!scannedVideosList || scannedVideosList.length === 0) {
+        return alert('Chưa có video nào để xuất!');
+      }
+
+      try {
+        const circleInfo = getSelectedCircleInfo();
+        const res = await fetch('/api/tiktok/export-scanned-excel', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            videos: scannedVideosList,
+            circle_id: circleInfo.id,
+            visibility: 'public'
+          })
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `danh_sach_tiktok_scan_${Date.now()}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          addLog(`✔ Đã xuất ${scannedVideosList.length} video ra file Excel thành công!`, 'text-emerald-400');
+        } else {
+          alert('✖ Không thể xuất file Excel.');
+        }
+      } catch (e) {
+        alert('✖ Lỗi xuất file: ' + e);
+      }
+    }
+
+    // Sao chép toàn bộ links vào Clipboard
+    function copyAllScannedLinks() {
+      if (!scannedVideosList || scannedVideosList.length === 0) return;
+      const text = scannedVideosList.map(v => v.url).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`✔ Đã sao chép ${scannedVideosList.length} link video vào Clipboard!`);
+      });
+    }
+
+    function addLog(message, color = 'text-slate-300') {
+      const logBox = document.getElementById('logContainer');
+      const timeStr = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = color;
+      div.innerHTML = `<span class="text-slate-500">[${timeStr}]</span> ${message}`;
+      logBox.appendChild(div);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async function pasteClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('syncUrlInput').value = text;
+      } catch (err) {
+        alert('Không thể đọc clipboard, vui lòng dán thủ công.');
+      }
+    }
+
+    // ==================== CIRCLE SELECTOR & MANAGEMENT JS ====================
+    let defaultEnvCircleId = 'd159b031-169d-4b4d-a2af-e8087b84a1fb';
+
+    // Tải danh sách Circle từ server và bộ nhớ local
+    async function loadUserCircles(isUserAction = false) {
+      try {
+        const res = await fetch('/api/circles');
+        const data = await res.json();
+        if (data.default_circle_id) {
+          defaultEnvCircleId = data.default_circle_id;
+        }
+
+        const select = document.getElementById('globalCircleSelect');
+        const previousVal = select.value;
+
+        // Xóa các options cũ trừ 2 cái cố định
+        select.innerHTML = `
+          <option value="">👤 Trang Cá Nhân (Personal - Không vào Circle)</option>
+          <option value="${defaultEnvCircleId}">🌐 Circle Mặc Định (.env: ${defaultEnvCircleId.slice(0,8)}...)</option>
+        `;
+
+        // Thêm các Circle fetched từ UCircle server
+        if (data.ok && data.circles && data.circles.length > 0) {
+          const group = document.createElement('optgroup');
+          group.label = '🏢 Circle của bạn trên UCircle:';
+          data.circles.forEach(c => {
+            if (c.id !== defaultEnvCircleId) {
+              const opt = document.createElement('option');
+              opt.value = c.id;
+              opt.innerText = `📁 ${c.name} (${c.id.slice(0,8)}...)`;
+              group.appendChild(opt);
+            }
+          });
+          select.appendChild(group);
+        }
+
+        // Thêm các Circle do user tự lưu (Presets)
+        const customPresets = JSON.parse(localStorage.getItem('tollcal_custom_circles') || '[]');
+        if (customPresets.length > 0) {
+          const groupCustom = document.createElement('optgroup');
+          groupCustom.label = '⭐ Circle đã lưu của bạn:';
+          customPresets.forEach(cp => {
+            const opt = document.createElement('option');
+            opt.value = cp.id;
+            opt.innerText = `⭐ ${cp.name} (${cp.id.slice(0,8)}...)`;
+            groupCustom.appendChild(opt);
+          });
+          select.appendChild(groupCustom);
+        }
+
+        // Option cuối: Nhập tùy chỉnh
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.innerText = '✏️ Nhập Link Circle hoặc UUID Mới...';
+        select.appendChild(customOpt);
+
+        // Khôi phục giá trị đã chọn
+        const savedChoice = localStorage.getItem('tollcal_selected_circle');
+        if (savedChoice !== null) {
+          select.value = savedChoice;
+        } else {
+          select.value = defaultEnvCircleId;
+        }
+
+        onGlobalCircleChange();
+        if (isUserAction) {
+          addLog(`✔ Đã tải danh sách Circle thành công (${(data.circles || []).length} circle từ UCircle).`, 'text-emerald-400 font-bold');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function onGlobalCircleChange() {
+      const select = document.getElementById('globalCircleSelect');
+      const customBox = document.getElementById('customCircleBox');
+      const badge = document.getElementById('circleActiveBadge');
+
+      if (select.value === '__custom__') {
+        customBox.classList.remove('hidden');
+        badge.innerText = 'Đang nhập Circle tùy chỉnh...';
+      } else {
+        customBox.classList.add('hidden');
+        localStorage.setItem('tollcal_selected_circle', select.value);
+
+        if (!select.value) {
+          badge.innerText = '🎯 Đang chọn: Trang Cá Nhân (Profile)';
+        } else {
+          const selectedText = select.options[select.selectedIndex]?.text || select.value;
+          badge.innerText = `🎯 Đang chọn: ${selectedText.split('(')[0].trim()}`;
+        }
+      }
+    }
+
+    function handleCustomCircleInput() {
+      const input = document.getElementById('customCircleInput').value.trim();
+      const extractedSpan = document.getElementById('customCircleExtracted');
+      const uuidMatch = input.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+      if (uuidMatch) {
+        extractedSpan.innerText = `UUID: ${uuidMatch[0].toLowerCase()}`;
+      } else if (input) {
+        extractedSpan.innerText = `(Chưa đúng định dạng UUID)`;
+      } else {
+        extractedSpan.innerText = '';
+      }
+    }
+
+    function saveCurrentCircleAsPreset() {
+      let circleId = '';
+      let circleName = document.getElementById('customCircleNameInput')?.value?.trim() || '';
+
+      const select = document.getElementById('globalCircleSelect');
+      if (select.value === '__custom__') {
+        const raw = document.getElementById('customCircleInput').value.trim();
+        const uuidMatch = raw.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+        if (!uuidMatch) return alert('Vui lòng nhập đúng link Circle hoặc UUID hợp lệ!');
+        circleId = uuidMatch[0].toLowerCase();
+        if (!circleName) circleName = `Circle ${circleId.slice(0,8)}`;
+      } else if (select.value) {
+        circleId = select.value;
+        if (!circleName) circleName = select.options[select.selectedIndex]?.text?.split('(')[0]?.trim() || `Circle ${circleId.slice(0,8)}`;
+      } else {
+        return alert('Vui lòng chọn hoặc nhập Circle trước khi lưu!');
+      }
+
+      const presets = JSON.parse(localStorage.getItem('tollcal_custom_circles') || '[]');
+      if (!presets.find(p => p.id === circleId)) {
+        presets.push({ id: circleId, name: circleName });
+        localStorage.setItem('tollcal_custom_circles', JSON.stringify(presets));
+        alert(`✔ Đã lưu "${circleName}" vào danh sách Circle!`);
+        localStorage.setItem('tollcal_selected_circle', circleId);
+        loadUserCircles();
+      } else {
+        alert('Circle này đã có trong danh sách lưu trữ!');
+      }
+    }
+
+    // Lấy Circle ID và tên đang được chọn
+    function getSelectedCircleInfo() {
+      const select = document.getElementById('globalCircleSelect');
+      if (select.value === '__custom__') {
+        const raw = document.getElementById('customCircleInput').value.trim();
+        const uuidMatch = raw.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+        const name = document.getElementById('customCircleNameInput')?.value?.trim() || 'Circle Tùy Chỉnh';
+        return {
+          id: uuidMatch ? uuidMatch[0].toLowerCase() : null,
+          name: name
+        };
+      }
+      
+      const id = select.value || null;
+      const name = select.options[select.selectedIndex]?.text?.split('(')[0]?.trim() || (id ? id.slice(0,8) : 'Trang Cá Nhân');
+      return { id, name };
+    }
+
+    // Kiểm tra trạng thái đăng nhập
+    async function refreshAuthStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+
+        if (data.authenticated) {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+          text.innerHTML = `Đã kết nối (<span class="text-emerald-400">${data.email || data.user_id.slice(0,8)}</span>)`;
+          
+          document.getElementById('quotaUserId').innerText = data.user_id || '—';
+          document.getElementById('quotaTier').innerText = (data.caps?.tier || 'standard').toUpperCase();
+          document.getElementById('quotaMaxSeconds').innerText = `${data.caps?.max_seconds || 180}s`;
+          document.getElementById('quotaMaxMb').innerText = `${data.caps?.max_mb || 250} MB`;
+          document.getElementById('quotaRemaining').innerText = data.caps?.quota_minutes_remaining !== null 
+            ? `${data.caps.quota_minutes_remaining} phút` : 'Không giới hạn';
+        } else {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+          text.innerText = 'Chưa đăng nhập UCircle';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Lắng nghe sự kiện để lưu dữ liệu khi người dùng gõ / F5
+    function initPersistence() {
+      // 1. URL input
+      const urlInput = document.getElementById('syncUrlInput');
+      if (urlInput) {
+        const savedUrl = localStorage.getItem('tollcal_sync_url');
+        if (savedUrl) urlInput.value = savedUrl;
+        urlInput.addEventListener('input', () => localStorage.setItem('tollcal_sync_url', urlInput.value));
+      }
+
+      // 2. Circle ID input
+      const circleInput = document.getElementById('syncCircleId');
+      if (circleInput) {
+        circleInput.addEventListener('input', () => localStorage.setItem('tollcal_circle_id', circleInput.value.trim()));
+      }
+
+      // 3. Visibility select
+      const visSelect = document.getElementById('syncVisibility');
+      if (visSelect) {
+        const savedVis = localStorage.getItem('tollcal_visibility');
+        if (savedVis) visSelect.value = savedVis;
+        visSelect.addEventListener('change', () => localStorage.setItem('tollcal_visibility', visSelect.value));
+      }
+
+      // 4. Caption input
+      const captionInput = document.getElementById('syncCaption');
+      if (captionInput) {
+        const savedCap = localStorage.getItem('tollcal_caption');
+        if (savedCap) captionInput.value = savedCap;
+        captionInput.addEventListener('input', () => localStorage.setItem('tollcal_caption', captionInput.value));
+      }
+
+      // 5. Multi-Worker slider
+      const slider = document.getElementById('workerSlider');
+      if (slider) {
+        const savedWorkers = localStorage.getItem('tollcal_workers');
+        if (savedWorkers) {
+          slider.value = savedWorkers;
+          const label = document.getElementById('workerCountLabel');
+          if (label) label.innerText = savedWorkers + ' Luồng';
+        }
+        slider.addEventListener('input', () => localStorage.setItem('tollcal_workers', slider.value));
+      }
+    }
+
+    // Gửi OTP
+    async function requestOtp() {
+      const email = document.getElementById('authEmailInput').value.trim();
+      if (!email) return alert('Vui lòng nhập Email UCircle!');
+
+      const btn = document.getElementById('btnSendOtp');
+      btn.disabled = true;
+      btn.innerText = 'Đang gửi...';
+
+      try {
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email})
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert('✔ Đã gửi mã OTP! Hãy kiểm tra hộp thư email của bạn.');
+        } else {
+          alert('✖ Lỗi: ' + (data.error || 'Không thể gửi OTP'));
+        }
+      } catch (e) {
+        alert('✖ Lỗi mạng: ' + e);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Gửi OTP';
+      }
+    }
+
+    // Xác thực OTP
+    async function verifyOtp() {
+      const email = document.getElementById('authEmailInput').value.trim();
+      const token = document.getElementById('authOtpInput').value.trim();
+      if (!email || !token) return alert('Vui lòng điền đủ Email và mã OTP!');
+
+      const btn = document.getElementById('btnVerifyOtp');
+      btn.disabled = true;
+      btn.innerText = 'Đang kiểm tra...';
+
+      try {
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, token})
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert('🎉 Đăng nhập UCircle thành công!');
+          refreshAuthStatus();
+          switchTab('sync');
+        } else {
+          alert('✖ Mã OTP sai hoặc hết hạn: ' + data.error);
+        }
+      } catch (e) {
+        alert('✖ Lỗi: ' + e);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Xác Nhận';
+      }
+    }
+
+    let currentSyncMode = 'single';
+    let batchVideosList = [];
+
+    // Chuyển đổi giữa chế độ 1 Link và Hàng Loạt (Excel/CSV)
+    function setSyncMode(mode) {
+      currentSyncMode = mode;
+      const singleBtn = document.getElementById('mode-single');
+      const batchBtn = document.getElementById('mode-batch');
+      const singlePanel = document.getElementById('panelSingleMode');
+      const batchPanel = document.getElementById('panelBatchMode');
+      const btnTemplate = document.getElementById('btnDownloadTemplate');
+
+      if (mode === 'single') {
+        singleBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition-all flex items-center space-x-1.5';
+        batchBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center space-x-1.5';
+        singlePanel.classList.remove('hidden');
+        batchPanel.classList.add('hidden');
+        btnTemplate.classList.add('hidden');
+      } else {
+        batchBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition-all flex items-center space-x-1.5';
+        singleBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center space-x-1.5';
+        batchPanel.classList.remove('hidden');
+        singlePanel.classList.add('hidden');
+        btnTemplate.classList.remove('hidden');
+      }
+    }
+
+    // Xử lý chọn file Excel / CSV
+    async function handleBatchFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('batchFileLabel').innerText = `Đang phân tích: ${file.name}...`;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/sync/parse-batch-file', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.ok && data.items && data.items.length > 0) {
+          batchVideosList = data.items;
+          document.getElementById('batchFileLabel').innerText = `Đã chọn: ${file.name}`;
+          document.getElementById('batchCountBadge').innerText = `Tìm thấy ${data.items.length} video TikTok`;
+          document.getElementById('batchPreviewBox').classList.remove('hidden');
+
+          const defaultCircleInfo = getSelectedCircleInfo();
+          // Render danh sách preview
+          const container = document.getElementById('batchItemsList');
+          container.innerHTML = data.items.map((it, idx) => {
+            const targetId = it.circle_id || defaultCircleInfo.id;
+            const targetName = it.circle_id ? `File Excel (${it.circle_id.slice(0,8)}...)` : defaultCircleInfo.name;
+            return `
+            <div class="p-2.5 flex items-center justify-between space-x-2">
+              <div class="truncate flex-1">
+                <span class="font-bold text-slate-400 mr-1.5">#${idx+1}</span>
+                <span class="text-cyan-300 font-mono">${it.url}</span>
+                ${it.caption ? `<div class="text-slate-400 truncate mt-0.5 text-[11px]">${it.caption}</div>` : ''}
+                <div class="text-cyan-400 text-[10px] mt-0.5 font-medium">🎯 Circle: ${targetName} (${targetId ? targetId.slice(0,8) + '...' : 'Cá nhân'})</div>
+              </div>
+              <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 shrink-0">${it.visibility}</span>
+            </div>
+            `;
+          }).join('');
+
+          addLog(`Đã nạp file ${file.name} thành công (${data.items.length} video sẵn sàng).`, 'text-cyan-400');
+        } else {
+          alert('✖ ' + (data.error || 'Không tìm thấy link TikTok nào trong file. Vui lòng kiểm tra lại cấu trúc file!'));
+          document.getElementById('batchFileLabel').innerText = 'Nhấp để chọn hoặc kéo thả file Excel (.xlsx) / CSV vào đây';
+        }
+      } catch (e) {
+        alert('✖ Lỗi khi tải file: ' + e);
+      }
+    }
+
+    // Bắt đầu Sync 1 Video
+    async function startSyncSingle() {
+      const url = document.getElementById('syncUrlInput').value.trim();
+      const visibility = document.getElementById('syncVisibility').value;
+      const caption = document.getElementById('syncCaption').value.trim();
+      const circleInfo = getSelectedCircleInfo();
+      const circleId = circleInfo.id;
+
+      if (!url) return alert('Vui lòng nhập link video TikTok!');
+
+      const btn = document.getElementById('btnStartSyncSingle');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      const progressBar = document.getElementById('progressBar');
+      const progressName = document.getElementById('progressStepName');
+      const progressPct = document.getElementById('progressPercent');
+
+      progressBar.style.width = '20%';
+      progressPct.innerText = '20%';
+      progressName.innerText = 'Đang trích xuất video TikTok...';
+      addLog(`Bắt đầu đồng bộ: ${url.slice(0, 45)}... -> 🎯 Mục tiêu: ${circleInfo.name}`, 'text-cyan-400 font-semibold');
+
+      try {
+        const res = await fetch('/api/sync/url', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            url,
+            visibility,
+            circle_id: circleId || null,
+            caption: caption || null
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          progressBar.style.width = '100%';
+          progressPct.innerText = '100%';
+          progressName.innerText = 'Đồng bộ hoàn tất 100%!';
+          addLog(`✔ Upload thành công sang "${circleInfo.name}"! UCircle Video ID: ${data.job.ucircle_video_id}`, 'text-emerald-400 font-bold');
+          alert(`🎉 Đồng bộ video sang "${circleInfo.name}" thành công!`);
+        } else {
+          progressBar.style.width = '100%';
+          progressBar.classList.add('from-rose-500', 'to-rose-700');
+          progressName.innerText = 'Lỗi đồng bộ';
+          addLog(`✖ Lỗi: ${data.error}`, 'text-rose-400 font-bold');
+          alert('✖ Lỗi: ' + data.error);
+        }
+      } catch (e) {
+        addLog(`✖ Lỗi mạng: ${e}`, 'text-rose-400');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // Bắt đầu Sync Hàng Loạt từ danh sách Excel/CSV (Hỗ trợ Multi-Worker Song Song)
+    async function startBatchSync() {
+      if (!batchVideosList || batchVideosList.length === 0) {
+        return alert('Chưa có video nào trong danh sách tải hàng loạt!');
+      }
+
+      const total = batchVideosList.length;
+      const concurrency = parseInt(document.getElementById('workerSlider')?.value || '3', 10);
+      const defaultCircleInfo = getSelectedCircleInfo();
+
+      if (!confirm(`Bạn có chắc chắn muốn đồng bộ ${total} video TikTok này lên "${defaultCircleInfo.name}" với ${concurrency} luồng (Multi-Worker) song song?`)) {
+        return;
+      }
+
+      const btn = document.getElementById('btnStartBatchSync');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      const progressBar = document.getElementById('progressBar');
+      const progressName = document.getElementById('progressStepName');
+      const progressPct = document.getElementById('progressPercent');
+
+      let completedCount = 0;
+      let successCount = 0;
+      let failCount = 0;
+
+      addLog(`🚀 BẮT ĐẦU ĐỒNG BỘ HÀNG LOẠT: ${total} video (${concurrency} workers song song) -> 🎯 Mục tiêu: ${defaultCircleInfo.name}...`, 'text-cyan-400 font-bold');
+
+      // Worker xử lý từng item từ queue
+      let currentIndex = 0;
+      async function worker(workerId) {
+        // Giãn cách khởi động giữa các workers chống nghẽn API
+        if (workerId > 1) {
+          await new Promise(r => setTimeout(r, (workerId - 1) * 350));
+        }
+
+        while (currentIndex < total) {
+          const itemIdx = currentIndex++;
+          const item = batchVideosList[itemIdx];
+          const humanIdx = itemIdx + 1;
+
+          const targetCircleId = (item.circle_id !== undefined && item.circle_id !== null && item.circle_id !== '') 
+            ? item.circle_id 
+            : defaultCircleInfo.id;
+          const targetCircleName = targetCircleId ? (targetCircleId.slice(0,8) + '...') : defaultCircleInfo.name;
+
+          addLog(`[Worker #${workerId}] Bắt đầu #${humanIdx}/${total} -> 🎯 Circle: [${targetCircleName}]: ${item.url.slice(0, 30)}...`, 'text-slate-300');
+
+          try {
+            const res = await fetch('/api/sync/url', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                url: item.url,
+                visibility: item.visibility || 'public',
+                circle_id: targetCircleId || null,
+                caption: item.caption || null
+              })
+            });
+
+            const data = await res.json();
+            if (data.ok) {
+              successCount++;
+              addLog(`✔ [Worker #${workerId}] Thành công #${humanIdx}/${total}! UCircle Video ID: ${data.job.ucircle_video_id}`, 'text-emerald-400');
+            } else {
+              failCount++;
+              addLog(`✖ [Worker #${workerId}] Thất bại #${humanIdx}/${total}: ${data.error}`, 'text-rose-400');
+            }
+          } catch (err) {
+            failCount++;
+            addLog(`✖ [Worker #${workerId}] Lỗi mạng #${humanIdx}/${total}: ${err}`, 'text-rose-400');
+          } finally {
+            completedCount++;
+            const pct = Math.round((completedCount / total) * 100);
+            progressBar.style.width = `${pct}%`;
+            progressPct.innerText = `${pct}%`;
+            progressName.innerText = `Đã xử lý ${completedCount}/${total} (${successCount} thành công, ${failCount} lỗi)`;
+          }
+        }
+      }
+
+      // Khởi chạy đồng thời số lượng workers theo cấu hình slider
+      const activeWorkers = [];
+      const numWorkers = Math.min(concurrency, total);
+      for (let w = 1; w <= numWorkers; w++) {
+        activeWorkers.push(worker(w));
+      }
+
+      await Promise.all(activeWorkers);
+
+      progressBar.style.width = '100%';
+      progressPct.innerText = '100%';
+      progressName.innerText = `Hoàn tất hàng loạt: ${successCount} thành công, ${failCount} lỗi.`;
+      addLog(`🎉 HOÀN TẤT ĐỒNG BỘ: ${successCount}/${total} video thành công, ${failCount} video lỗi.`, 'text-emerald-400 font-bold');
+
+      alert(`🎉 Đồng bộ hàng loạt hoàn tất!\n• Tổng số: ${total}\n• Thành công: ${successCount}\n• Thất bại: ${failCount}`);
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    // Tải Lịch sử
+    async function loadHistory() {
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">Đang tải...</td></tr>';
+      try {
+        const res = await fetch('/api/jobs');
+        const jobs = await res.json();
+        if (!jobs || jobs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">Chưa có bản ghi nào.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = jobs.map((j, idx) => {
+          const ucircleUrl = j.ucircle_video_id ? `https://ucircle.net/wavee/${j.ucircle_video_id}` : null;
+          return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="px-3.5 py-3 font-mono text-slate-400 font-bold">#${idx + 1}</td>
+            <td class="px-3.5 py-3 text-cyan-400 font-mono text-xs max-w-xs truncate">
+              <a href="${j.source_url}" target="_blank" class="hover:underline flex items-center space-x-1">
+                <span>${j.source_url}</span>
+                <i data-lucide="external-link" class="w-3 h-3 shrink-0"></i>
+              </a>
+            </td>
+            <td class="px-3.5 py-3 font-mono text-xs">
+              ${ucircleUrl ? `
+                <a href="${ucircleUrl}" target="_blank" class="text-emerald-400 hover:text-emerald-300 font-bold hover:underline flex items-center space-x-1">
+                  <span>${j.ucircle_video_id.slice(0, 12)}... (Xem Video ↗)</span>
+                </a>
+              ` : '<span class="text-slate-500">—</span>'}
+            </td>
+            <td class="px-3.5 py-3 text-slate-300 text-xs">${j.duration_seconds ? j.duration_seconds + 's' : '—'}</td>
+            <td class="px-3.5 py-3">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${j.state === 'PUBLISHED' || j.state === 'ENCODED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/40' : 'bg-amber-950 text-amber-400'}">
+                ${j.state}
+              </span>
+            </td>
+            <td class="px-3.5 py-3 text-xs text-slate-500">${new Date(j.created_at).toLocaleString()}</td>
+          </tr>
+        `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-rose-400">Lỗi tải lịch sử: ${e}</td></tr>`;
+      }
+    }
+
+    // Tải danh sách Kênh
+    async function loadChannels() {
+      const tbody = document.getElementById('channelTableBody');
+      try {
+        const res = await fetch('/api/channels');
+        const channels = await res.json();
+        if (!channels || channels.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có kênh nào trong danh sách.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = channels.map(ch => `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="px-4 py-3 font-bold text-cyan-400">${ch.creator_id}</td>
+            <td class="px-4 py-3 text-blue-400 truncate max-w-xs"><a href="${ch.channel_url}" target="_blank">${ch.channel_url}</a></td>
+            <td class="px-4 py-3 text-slate-400 uppercase text-xs">${ch.rights_basis}</td>
+            <td class="px-4 py-3 text-xs text-slate-400">${ch.last_scanned_at ? new Date(ch.last_scanned_at).toLocaleString() : 'Chưa quét'}</td>
+            <td class="px-4 py-3 text-right">
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold ${ch.is_active ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-800 text-slate-500'}">
+                ${ch.is_active ? 'Đang chạy' : 'Tạm dừng'}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openAddChannelModal() {
+      const url = prompt('Nhập URL trang TikTok Creator (vd: https://www.tiktok.com/@username):');
+      if (!url) return;
+      const creatorId = prompt('Nhập Tên / ID định danh Creator:');
+      if (!creatorId) return;
+
+      fetch('/api/channels', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url, creator_id: creatorId})
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          alert('✔ Đã thêm kênh thành công!');
+          loadChannels();
+        } else {
+          alert('✖ Lỗi: ' + d.error);
+        }
+      });
+    }
+
+    // Khởi động
+    initPersistence();
+    refreshAuthStatus();
+    loadUserCircles();
+  </script>
+</body>
+</html>
